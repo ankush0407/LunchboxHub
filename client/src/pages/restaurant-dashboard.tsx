@@ -574,6 +574,30 @@ export default function RestaurantDashboard() {
                               </FormItem>
                             )}
                           />
+                          <div className="space-y-3">
+                            <FormLabel className="text-base font-semibold">Weekly Menu</FormLabel>
+                            <p className="text-sm text-muted-foreground">Enter the menu for each day of the week (optional)</p>
+                            {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
+                              <FormField
+                                key={day}
+                                control={form.control}
+                                name={`weeklyMenu.${day}` as any}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="capitalize">{day}</FormLabel>
+                                    <FormControl>
+                                      <Input 
+                                        placeholder={`e.g., Dal Makhani + Roti`} 
+                                        {...field} 
+                                        data-testid={`input-weekly-menu-${day}`}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            ))}
+                          </div>
                           <FormField
                             control={form.control}
                             name="deliveryBuildingIds"
