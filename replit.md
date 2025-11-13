@@ -4,7 +4,18 @@
 
 LunchBox is a food delivery platform specifically designed for Amazon office locations. The application enables customers to order lunchboxes from local restaurants with delivery to specific Amazon buildings (SLU, Bellevue, Redmond). It features three user roles: customers who place orders, restaurant owners who manage their menus and orders, and admins who oversee the entire platform.
 
-The system is built as a full-stack TypeScript application with a React frontend, Express backend, and PostgreSQL database. It includes features like user authentication, role-based access control, shopping cart functionality, order management, and payment integration with Stripe.
+The system is built as a full-stack TypeScript application with a React frontend, Express backend, and PostgreSQL database. It includes features like user authentication, role-based access control, shopping cart functionality, order management, payment integration with Stripe, and weekly menu management.
+
+## Key Features
+
+### Weekly Menu System
+- **Restaurant Owner**: Can add structured weekly menus (Monday-Sunday) to each lunchbox via the restaurant dashboard
+- **Customer**: Can view weekly menus through an interactive modal popup when viewing lunchboxes
+- **Storage**: Weekly menus stored as JSONB in the database with optional fields for each day
+- **UI Components**: 
+  - Edit form with individual input fields for each day of the week
+  - Modal component displaying day-by-day menu items with visual day badges
+  - "View Weekly Menu" button appears on lunchbox cards when menu data exists
 
 ## User Preferences
 
@@ -32,8 +43,8 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL with Neon serverless hosting
 - **ORM**: Drizzle ORM for type-safe database operations and migrations
 - **Schema Design**: Normalized relational structure with proper foreign key relationships
-- **Tables**: users, restaurants, lunchboxes, orders, orderItems, emailVerifications, passwordResets with appropriate indexes and constraints
-- **Data Types**: PostgreSQL enums for user roles and order statuses, UUIDs for primary keys
+- **Tables**: users, restaurants, lunchboxes (with weeklyMenu JSONB), orders, orderItems, emailVerifications, passwordResets with appropriate indexes and constraints
+- **Data Types**: PostgreSQL enums for user roles and order statuses, UUIDs for primary keys, JSONB for structured weekly menu data
 
 ### Authentication & Authorization
 - **Strategy**: Session-based authentication with HTTP-only cookies
