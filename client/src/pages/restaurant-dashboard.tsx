@@ -26,6 +26,15 @@ const lunchboxFormSchema = insertLunchboxSchema.omit({ restaurantId: true }).ext
   deliveryBuildingIds: z.array(z.string()).optional(),
   dietaryTags: z.array(z.string()).optional(),
   availableDays: z.array(z.string()).optional(),
+  weeklyMenu: z.object({
+    monday: z.string().optional(),
+    tuesday: z.string().optional(),
+    wednesday: z.string().optional(),
+    thursday: z.string().optional(),
+    friday: z.string().optional(),
+    saturday: z.string().optional(),
+    sunday: z.string().optional(),
+  }).optional(),
 });
 
 export default function RestaurantDashboard() {
@@ -80,6 +89,15 @@ export default function RestaurantDashboard() {
       dietaryTags: [],
       availableDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
       deliveryBuildingIds: [],
+      weeklyMenu: {
+        monday: "",
+        tuesday: "",
+        wednesday: "",
+        thursday: "",
+        friday: "",
+        saturday: "",
+        sunday: "",
+      },
     },
   });
 
@@ -200,6 +218,15 @@ export default function RestaurantDashboard() {
       dietaryTags: lunchbox.dietaryTags || [],
       availableDays: lunchbox.availableDays || ["monday", "tuesday", "wednesday", "thursday", "friday"],
       deliveryBuildingIds: lunchbox.deliveryBuildingIds || [],
+      weeklyMenu: lunchbox.weeklyMenu || {
+        monday: "",
+        tuesday: "",
+        wednesday: "",
+        thursday: "",
+        friday: "",
+        saturday: "",
+        sunday: "",
+      },
     } as any);
     setIsEditDialogOpen(true);
   };
@@ -884,6 +911,30 @@ export default function RestaurantDashboard() {
                     </FormItem>
                   )}
                 />
+                <div className="space-y-3">
+                  <FormLabel className="text-base font-semibold">Weekly Menu</FormLabel>
+                  <p className="text-sm text-muted-foreground">Enter the menu for each day of the week</p>
+                  {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
+                    <FormField
+                      key={day}
+                      control={form.control}
+                      name={`weeklyMenu.${day}` as any}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="capitalize">{day}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder={`e.g., Dal Makhani + Roti`} 
+                              {...field} 
+                              data-testid={`input-weekly-menu-${day}`}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
                 <FormField
                   control={form.control}
                   name="deliveryBuildingIds"

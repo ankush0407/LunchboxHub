@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, decimal, integer, timestamp, boolean, pgEnum, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, decimal, integer, timestamp, boolean, pgEnum, serial, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -47,6 +47,15 @@ export const lunchboxes = pgTable("lunchboxes", {
   isAvailable: boolean("is_available").default(true),
   dietaryTags: text("dietary_tags").array(),
   availableDays: text("available_days").array().default(sql`'{monday,tuesday,wednesday,thursday,friday}'`),
+  weeklyMenu: jsonb("weekly_menu").$type<{
+    monday?: string;
+    tuesday?: string;
+    wednesday?: string;
+    thursday?: string;
+    friday?: string;
+    saturday?: string;
+    sunday?: string;
+  }>(),
   restaurantId: varchar("restaurant_id").references(() => restaurants.id),
   deliveryBuildingIds: varchar("delivery_building_ids").array(),
   createdAt: timestamp("created_at").defaultNow(),
