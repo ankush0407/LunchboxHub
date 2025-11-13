@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Lunchbox } from "@shared/schema";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
@@ -7,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isProfileComplete, getProfileCompletionMessage } from "@/lib/profile-utils";
 import { Utensils, Plus, Calendar } from "lucide-react";
 import { useLocation } from "wouter";
+import { WeeklyMenuModal } from "./weekly-menu-modal";
 
 interface LunchboxCardProps {
   lunchbox: Lunchbox;
@@ -19,6 +21,9 @@ export default function LunchboxCard({ lunchbox, restaurantName, restaurantDeliv
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [showWeeklyMenu, setShowWeeklyMenu] = useState(false);
+
+  const hasWeeklyMenu = lunchbox.weeklyMenu && Object.values(lunchbox.weeklyMenu).some(menu => menu && menu.trim() !== "");
 
   const handleAddToCart = () => {
     if (!lunchbox.isAvailable) {
@@ -95,14 +100,27 @@ export default function LunchboxCard({ lunchbox, restaurantName, restaurantDeliv
                 </div>
               )}
               
-              {lunchbox.availableDays && lunchbox.availableDays.length > 0 && (
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">
-                    {lunchbox.availableDays.map(day => day.slice(0, 3).toUpperCase()).join(", ")}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {lunchbox.availableDays && lunchbox.availableDays.length > 0 && (
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {lunchbox.availableDays.map(day => day.slice(0, 3).toUpperCase()).join(", ")}
+                    </span>
+                  </div>
+                )}
+                {hasWeeklyMenu && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs text-primary hover:underline"
+                    onClick={() => setShowWeeklyMenu(true)}
+                    data-testid={`button-view-weekly-menu-${lunchbox.id}`}
+                  >
+                    View Weekly Menu
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           
@@ -129,6 +147,13 @@ export default function LunchboxCard({ lunchbox, restaurantName, restaurantDeliv
           </div>
         </div>
       </div>
+
+      <WeeklyMenuModal 
+        open={showWeeklyMenu}
+        onOpenChange={setShowWeeklyMenu}
+        lunchboxName={lunchbox.name}
+        weeklyMenu={lunchbox.weeklyMenu || undefined}
+      />
     </div>
   );
 }
