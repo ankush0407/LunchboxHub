@@ -819,6 +819,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/settings/service-fee", async (req, res) => {
+    try {
+      const setting = await storage.getSetting("service_fee");
+      res.json({ value: setting?.value || "2.00" });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching service fee: " + error.message });
+    }
+  });
+
+  app.put("/api/settings/service-fee", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const { value } = req.body;
+      if (!value || isNaN(parseFloat(value))) {
+        return res.status(400).json({ message: "Invalid service fee value" });
+      }
+      const setting = await storage.setSetting("service_fee", value);
+      res.json(setting);
+    } catch (error: any) {
+      res.status(400).json({ message: "Error updating service fee: " + error.message });
+    }
+  });
+
+  app.put("/api/restaurants/:id/discount", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const restaurant = await storage.getRestaurant(req.params.id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      if (req.user.role !== "admin" && restaurant.ownerId !== req.user.id) {
+        return res.sendStatus(403);
+      }
+
+      const { discountType, discountValue } = req.body;
+      
+      if (discountType && !["percentage", "flat", null].includes(discountType)) {
+        return res.status(400).json({ message: "Invalid discount type. Must be 'percentage' or 'flat'" });
+      }
+
+      if (discountValue !== undefined && discountValue !== null && isNaN(parseFloat(discountValue))) {
+        return res.status(400).json({ message: "Invalid discount value" });
+      }
+
+      const updated = await storage.updateRestaurant(req.params.id, {
+        discountType: discountType || null,
+        discountValue: discountValue || null,
+      });
+
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).json({ message: "Error updating restaurant discount: " + error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
