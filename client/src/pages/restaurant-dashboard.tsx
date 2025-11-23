@@ -37,6 +37,9 @@ const lunchboxFormSchema = insertLunchboxSchema.omit({ restaurantId: true }).ext
   }).optional(),
 });
 
+const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const WEEK_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
 export default function RestaurantDashboard() {
   const [, setLocation] = useLocation();
   const { user, logoutMutation } = useAuth();
@@ -547,7 +550,7 @@ export default function RestaurantDashboard() {
                               <FormItem>
                                 <FormLabel>Available Days (Weekdays Only)</FormLabel>
                                 <div className="grid grid-cols-5 gap-2">
-                                  {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day) => {
+                                  {WEEKDAY_NAMES.map((day) => {
                                     const dayValue = day.toLowerCase();
                                     return (
                                       <div key={day} className="flex items-center space-x-2">
@@ -577,7 +580,7 @@ export default function RestaurantDashboard() {
                           <div className="space-y-3">
                             <FormLabel className="text-base font-semibold">Weekly Menu</FormLabel>
                             <p className="text-sm text-muted-foreground">Enter the menu for each day of the week (optional)</p>
-                            {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
+                            {WEEK_DAYS.map((day) => (
                               <FormField
                                 key={day}
                                 control={form.control}
@@ -788,7 +791,7 @@ export default function RestaurantDashboard() {
             setLunchboxImageUrl("");
           }
         }}>
-          <DialogContent className="max-h-[85vh] overflow-y-auto" key={`edit-dialog-${editingLunchbox?.id || 'new'}`}>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Lunchbox</DialogTitle>
               <DialogDescription>
@@ -908,7 +911,7 @@ export default function RestaurantDashboard() {
                     <FormItem>
                       <FormLabel>Available Days (Weekdays Only)</FormLabel>
                       <div className="grid grid-cols-5 gap-2">
-                        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day) => {
+                        {WEEKDAY_NAMES.map((day) => {
                           const dayValue = day.toLowerCase();
                           return (
                             <div key={day} className="flex items-center space-x-2">
@@ -938,7 +941,7 @@ export default function RestaurantDashboard() {
                 <div className="space-y-3">
                   <FormLabel className="text-base font-semibold">Weekly Menu</FormLabel>
                   <p className="text-sm text-muted-foreground">Enter the menu for each day of the week</p>
-                  {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
+                  {WEEK_DAYS.map((day) => (
                     <FormField
                       key={day}
                       control={form.control}

@@ -145,7 +145,7 @@ export default function HomePage() {
         
         {/* Hero Section */}
         <section className="gradient-hero py-16 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-black/10"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-black/40"></div>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg mb-4">
               Fresh Lunchboxes<br />

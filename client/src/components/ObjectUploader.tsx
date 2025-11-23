@@ -40,7 +40,7 @@ export function ObjectUploader({
         maxFileSize,
         allowedFileTypes: ['image/*'], // Only allow images for restaurant logos
       },
-      autoProceed: false,
+      autoProceed: true,
     })
       .use(AwsS3, {
         shouldUseMultipart: false,
