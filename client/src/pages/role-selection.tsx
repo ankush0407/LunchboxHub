@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Utensils, Store, Shield, Users } from "lucide-react";
+import { Utensils, Store, Users } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -74,12 +74,6 @@ export default function RoleSelectionPage() {
       label: "Restaurant Owner",
       description: "Manage your restaurant and create lunchbox menus",
       icon: Store,
-    },
-    {
-      value: "admin",
-      label: "Administrator",
-      description: "Manage the platform and onboard restaurants",
-      icon: Shield,
     },
   ];
 
