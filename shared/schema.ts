@@ -35,6 +35,8 @@ export const restaurants = pgTable("restaurants", {
   deliveryLocationId: varchar("delivery_location_id").references(() => deliveryLocations.id),
   isActive: boolean("is_active").default(true),
   ownerId: varchar("owner_id").references(() => users.id),
+  discountType: text("discount_type"),
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -75,6 +77,8 @@ export const orders = pgTable("orders", {
   deliveryLocation: text("delivery_location").notNull(),
   deliveryBuildingId: varchar("delivery_building_id").references(() => deliveryBuildings.id),
   deliveryDay: text("delivery_day").notNull(),
+  isPickup: boolean("is_pickup").default(false),
+  discount: decimal("discount", { precision: 10, scale: 2 }).default("0.00"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -120,6 +124,13 @@ export const passwordResets = pgTable("password_resets", {
   expiresAt: timestamp("expires_at").notNull(),
   used: boolean("used").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const settings = pgTable("settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations
@@ -242,6 +253,10 @@ export const insertPasswordResetSchema = createInsertSchema(passwordResets).omit
   createdAt: true,
 });
 
+export const insertSettingSchema = createInsertSchema(settings).omit({
+  id: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -261,3 +276,5 @@ export type EmailVerification = typeof emailVerifications.$inferSelect;
 export type InsertEmailVerification = z.infer<typeof insertEmailVerificationSchema>;
 export type PasswordReset = typeof passwordResets.$inferSelect;
 export type InsertPasswordReset = z.infer<typeof insertPasswordResetSchema>;
+export type Setting = typeof settings.$inferSelect;
+export type InsertSetting = z.infer<typeof insertSettingSchema>;

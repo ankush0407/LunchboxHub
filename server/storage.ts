@@ -1,6 +1,6 @@
 import { 
   users, restaurants, lunchboxes, orders, orderItems, deliveryLocations, deliveryBuildings,
-  emailVerifications, passwordResets,
+  emailVerifications, passwordResets, settings,
   type User, type InsertUser,
   type Restaurant, type InsertRestaurant,
   type Lunchbox, type InsertLunchbox,
@@ -9,7 +9,8 @@ import {
   type DeliveryLocation, type InsertDeliveryLocation,
   type DeliveryBuilding, type InsertDeliveryBuilding,
   type EmailVerification, type InsertEmailVerification,
-  type PasswordReset, type InsertPasswordReset
+  type PasswordReset, type InsertPasswordReset,
+  type Setting, type InsertSetting
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -74,6 +75,9 @@ export interface IStorage {
   
   createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
   getOrderItems(orderId: string): Promise<OrderItem[]>;
+  
+  getSetting(key: string): Promise<Setting | undefined>;
+  setSetting(key: string, value: string): Promise<Setting>;
   
   sessionStore: session.Store;
 }
@@ -491,6 +495,27 @@ export class DatabaseStorage implements IStorage {
     return withRetry(async () => {
       const result = await db.delete(deliveryBuildings).where(eq(deliveryBuildings.id, id));
       return (result.rowCount || 0) > 0;
+    });
+  }
+
+  async getSetting(key: string): Promise<Setting | undefined> {
+    return withRetry(async () => {
+      const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+      return setting || undefined;
+    });
+  }
+
+  async setSetting(key: string, value: string): Promise<Setting> {
+    return withRetry(async () => {
+      const [setting] = await db
+        .insert(settings)
+        .values({ key, value })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value, updatedAt: new Date() }
+        })
+        .returning();
+      return setting;
     });
   }
 }
