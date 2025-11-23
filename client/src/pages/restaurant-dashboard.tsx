@@ -49,6 +49,9 @@ export default function RestaurantDashboard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingLunchbox, setEditingLunchbox] = useState<Lunchbox | null>(null);
   const [lunchboxImageUrl, setLunchboxImageUrl] = useState("");
+  const [isEditingDiscount, setIsEditingDiscount] = useState(false);
+  const [discountType, setDiscountType] = useState<"percentage" | "flat" | "">("");
+  const [discountValue, setDiscountValue] = useState("");
 
   // Redirect non-restaurant owners
   if (user && user.role !== "restaurant_owner" && user.role !== "admin") {
@@ -200,6 +203,35 @@ export default function RestaurantDashboard() {
     },
   });
 
+  const updateDiscountMutation = useMutation({
+    mutationFn: async (data: { discountType: string | null; discountValue: string | null }) => {
+      const res = await apiRequest("PUT", `/api/restaurants/${restaurant?.id}/discount`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurants", "owner", user?.id] });
+      setIsEditingDiscount(false);
+      toast({
+        title: "Success",
+        description: "Discount settings updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (restaurant) {
+      setDiscountType((restaurant.discountType as "percentage" | "flat" | "") || "");
+      setDiscountValue(restaurant.discountValue || "");
+    }
+  }, [restaurant]);
+
   const onSubmit = async (data: any) => {
     if (editingLunchbox) {
       updateLunchboxMutation.mutate(data);
@@ -247,6 +279,30 @@ export default function RestaurantDashboard() {
     } catch (error) {
       // Error handled by mutation
     }
+  };
+
+  const handleUpdateDiscount = () => {
+    if (!discountType) {
+      updateDiscountMutation.mutate({
+        discountType: null,
+        discountValue: null,
+      });
+      return;
+    }
+
+    if (!discountValue || isNaN(parseFloat(discountValue)) || parseFloat(discountValue) < 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid discount value",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateDiscountMutation.mutate({
+      discountType,
+      discountValue,
+    });
   };
 
   // Calculate stats
@@ -773,6 +829,80 @@ export default function RestaurantDashboard() {
                     <div className="flex items-center space-x-2">
                       <Star className="w-4 h-4 text-yellow-500" />
                       <span>{restaurant?.rating || "0.0"}</span>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <label className="text-sm font-medium block mb-2">Discount Settings</label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Apply a discount to all menu items. This will be reflected in customer checkout.
+                    </p>
+                    <div className="space-y-3">
+                      <Select
+                        value={discountType}
+                        onValueChange={(value) => setDiscountType(value as "percentage" | "flat" | "")}
+                        disabled={!isEditingDiscount}
+                      >
+                        <SelectTrigger className="w-full" data-testid="select-discount-type">
+                          <SelectValue placeholder="Select discount type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">No Discount</SelectItem>
+                          <SelectItem value="percentage">Percentage Off</SelectItem>
+                          <SelectItem value="flat">Flat Amount Off</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {discountType && (
+                        <div className="flex items-center space-x-2">
+                          {discountType === "flat" && <span className="text-muted-foreground">$</span>}
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={discountValue}
+                            onChange={(e) => setDiscountValue(e.target.value)}
+                            disabled={!isEditingDiscount}
+                            placeholder={discountType === "percentage" ? "e.g., 10" : "e.g., 2.50"}
+                            className="w-32"
+                            data-testid="input-discount-value"
+                          />
+                          {discountType === "percentage" && <span className="text-muted-foreground">%</span>}
+                        </div>
+                      )}
+
+                      {isEditingDiscount ? (
+                        <div className="flex space-x-2">
+                          <Button
+                            onClick={handleUpdateDiscount}
+                            disabled={updateDiscountMutation.isPending}
+                            size="sm"
+                            data-testid="button-save-discount"
+                          >
+                            Save Discount
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setIsEditingDiscount(false);
+                              setDiscountType((restaurant?.discountType as "percentage" | "flat" | "") || "");
+                              setDiscountValue(restaurant?.discountValue || "");
+                            }}
+                            variant="outline"
+                            size="sm"
+                            data-testid="button-cancel-discount"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={() => setIsEditingDiscount(true)}
+                          variant="outline"
+                          size="sm"
+                          data-testid="button-edit-discount"
+                        >
+                          Edit Discount
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
