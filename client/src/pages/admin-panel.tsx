@@ -35,6 +35,8 @@ export default function AdminPanel() {
   const [editingLocation, setEditingLocation] = useState<DeliveryLocation | null>(null);
   const [isBuildingDialogOpen, setIsBuildingDialogOpen] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<DeliveryBuilding | null>(null);
+  const [serviceFee, setServiceFee] = useState("");
+  const [isEditingServiceFee, setIsEditingServiceFee] = useState(false);
 
   // Redirect non-admins
   if (user && user.role !== "admin") {
@@ -52,6 +54,13 @@ export default function AdminPanel() {
 
   const { data: deliveryBuildings, isLoading: buildingsLoading } = useQuery<DeliveryBuilding[]>({
     queryKey: ["/api/delivery-buildings/all"],
+  });
+
+  const { data: serviceFeeData } = useQuery<{ value: string }>({
+    queryKey: ["/api/settings/service-fee"],
+    onSuccess: (data) => {
+      setServiceFee(data.value);
+    },
   });
 
   const form = useForm({
@@ -294,6 +303,28 @@ export default function AdminPanel() {
     },
   });
 
+  const updateServiceFeeMutation = useMutation({
+    mutationFn: async (value: string) => {
+      const res = await apiRequest("PUT", "/api/settings/service-fee", { value });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/service-fee"] });
+      setIsEditingServiceFee(false);
+      toast({
+        title: "Success",
+        description: "Service fee updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: any) => {
     if (editingRestaurant) {
       updateRestaurantMutation.mutate(data);
@@ -383,6 +414,18 @@ export default function AdminPanel() {
       setLocation("/auth");
     } catch (error) {
       // Error handled by mutation
+    }
+  };
+
+  const handleUpdateServiceFee = () => {
+    if (serviceFee && !isNaN(parseFloat(serviceFee))) {
+      updateServiceFeeMutation.mutate(serviceFee);
+    } else {
+      toast({
+        title: "Error",
+        description: "Please enter a valid service fee amount",
+        variant: "destructive",
+      });
     }
   };
 
@@ -746,6 +789,68 @@ export default function AdminPanel() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Settings Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Platform Settings</CardTitle>
+            <CardDescription>Configure global platform settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Service Fee (per order)</label>
+                <div className="flex items-center space-x-2 mt-2">
+                  <span className="text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={serviceFee}
+                    onChange={(e) => setServiceFee(e.target.value)}
+                    disabled={!isEditingServiceFee}
+                    className="w-32"
+                    data-testid="input-service-fee"
+                  />
+                  {isEditingServiceFee ? (
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={handleUpdateServiceFee} 
+                        disabled={updateServiceFeeMutation.isPending}
+                        size="sm"
+                        data-testid="button-save-service-fee"
+                      >
+                        Save
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setIsEditingServiceFee(false);
+                          setServiceFee(serviceFeeData?.value || "2.00");
+                        }}
+                        variant="outline"
+                        size="sm"
+                        data-testid="button-cancel-service-fee"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      onClick={() => setIsEditingServiceFee(true)}
+                      variant="outline"
+                      size="sm"
+                      data-testid="button-edit-service-fee"
+                    >
+                      Edit
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  This fee will be applied to all customer orders during checkout.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Restaurant Management Table */}
         <Card>
