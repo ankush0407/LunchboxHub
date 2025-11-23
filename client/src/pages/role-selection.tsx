@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function RoleSelectionPage() {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,6 +21,19 @@ export default function RoleSelectionPage() {
     setLocation("/");
     return null;
   }
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      setLocation("/auth");
+    } catch (error) {
+      toast({
+        title: "Error logging out",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleRoleSubmit = async () => {
     if (!selectedRole) {
@@ -80,7 +93,7 @@ export default function RoleSelectionPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center relative">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <Utensils className="w-6 h-6 text-primary-foreground" />
@@ -91,6 +104,15 @@ export default function RoleSelectionPage() {
           <CardDescription>
             Welcome {user.username}! Please select your account type to get started.
           </CardDescription>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleLogout}
+            className="absolute top-4 right-4"
+            data-testid="button-logout"
+          >
+            Log Out
+          </Button>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">

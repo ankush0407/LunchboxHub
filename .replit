@@ -69,9 +69,3 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_stripe==1.0.0", "javascript_object_storage==1.0.0"]
-
-[userenv]
-
-[userenv.shared]
-TESTING_VITE_STRIPE_PUBLIC_KEY = "pk_test_51SEZnoGcozqnp8InsIlSI1ZPgo54OAtjzFWlRJNeeeHQdFMJ6gZKElEumcywJqEMDqGrVUdk82jPGcL2RXgQmBRL000XTWHLAh"
-TESTING_STRIPE_SECRET_KEY = "sk_test_51SEZnoGcozqnp8Inmv3qIXb3sojhjGaotNk4uISJktDPEzRdg5GxshAciOvTmPhsqTtm4YousJOslLmOIyUsBLAa00Mh2HV6sq"
