@@ -10,13 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isProfileComplete, getProfileCompletionMessage } from "@/lib/profile-utils";
 import { ArrowLeft, CreditCard, MapPin, ShoppingBag, Calendar, Clock, User, Building2 } from "lucide-react";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { DeliveryBuilding, DeliveryLocation } from "@shared/schema";
+import { DeliveryBuilding, DeliveryLocation, Restaurant } from "@shared/schema";
 
 // Initialize Stripe
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
@@ -119,9 +120,25 @@ export default function Checkout() {
   const [selectedDeliveryDay, setSelectedDeliveryDay] = useState("");
   const [selectedDeliveryBuilding, setSelectedDeliveryBuilding] = useState("");
   const [clientSecret, setClientSecret] = useState("");
+  const [isPickup, setIsPickup] = useState(false);
 
   const { data: deliveryLocations } = useQuery<DeliveryLocation[]>({
     queryKey: ["/api/delivery-locations"],
+  });
+
+  const { data: serviceFeeData } = useQuery<{ value: string }>({
+    queryKey: ["/api/settings/service-fee"],
+  });
+
+  const firstRestaurantId = items[0]?.lunchbox?.restaurantId;
+  const { data: restaurant } = useQuery<Restaurant>({
+    queryKey: ["/api/restaurants", firstRestaurantId],
+    queryFn: async () => {
+      if (!firstRestaurantId) return null;
+      const res = await apiRequest("GET", `/api/restaurants/${firstRestaurantId}`);
+      return res.json();
+    },
+    enabled: !!firstRestaurantId,
   });
 
   const userDeliveryLocation = deliveryLocations?.find(loc => loc.name === selectedLocation);
@@ -230,14 +247,34 @@ export default function Checkout() {
     }
   }, [selectedDeliveryDay, availableDeliveryDays]);
 
-  const serviceFee = 1.50;
-  const taxRate = 0.10;
-  const tax = subtotal * taxRate;
-  const total = subtotal + deliveryFee + serviceFee + tax;
+  // Calculate service fee, discount, and totals
+  const serviceFee = parseFloat(serviceFeeData?.value || "2.00");
+  
+  // Calculate discount
+  let discount = 0;
+  if (restaurant?.discountType && restaurant?.discountValue) {
+    const discountVal = parseFloat(restaurant.discountValue);
+    if (restaurant.discountType === "percentage") {
+      discount = (subtotal * discountVal) / 100;
+    } else if (restaurant.discountType === "flat") {
+      discount = discountVal;
+    }
+  }
 
-  // Create payment intent when component mounts
+  // Calculate final amounts
+  const subtotalAfterDiscount = Math.max(0, subtotal - discount);
+  const taxRate = 0.10;
+  const tax = subtotalAfterDiscount * taxRate;
+  
+  // For pickup: delivery fee and service fee are $0
+  const finalDeliveryFee = isPickup ? 0 : deliveryFee;
+  const finalServiceFee = isPickup ? 0 : serviceFee;
+  
+  const total = subtotalAfterDiscount + finalDeliveryFee + finalServiceFee + tax;
+
+  // Create payment intent when component mounts (only for delivery, not pickup)
   useEffect(() => {
-    if (total > 0) {
+    if (total > 0 && !isPickup) {
       apiRequest("POST", "/api/create-payment-intent", { amount: total })
         .then((res) => res.json())
         .then((data) => {
@@ -251,7 +288,7 @@ export default function Checkout() {
           });
         });
     }
-  }, [total, toast]);
+  }, [total, toast, isPickup]);
 
   const handleOrderSuccess = () => {
     clearCart();
@@ -296,13 +333,15 @@ export default function Checkout() {
     return {
       restaurantId,
       subtotal: subtotal.toFixed(2),
-      deliveryFee: deliveryFee.toFixed(2),
-      serviceFee: serviceFee.toFixed(2),
+      deliveryFee: finalDeliveryFee.toFixed(2),
+      serviceFee: finalServiceFee.toFixed(2),
       tax: tax.toFixed(2),
       total: total.toFixed(2),
       deliveryLocation: selectedLocation,
       deliveryBuildingId: selectedDeliveryBuilding,
       deliveryDay: selectedDeliveryDay,
+      isPickup: isPickup,
+      discount: discount.toFixed(2),
       items: firstRestaurantItems.map(item => ({
         lunchboxId: item.lunchbox.id,
         quantity: item.quantity,
@@ -311,13 +350,34 @@ export default function Checkout() {
     };
   };
 
-  if (!clientSecret) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
-      </div>
-    );
-  }
+  // Add mutation for pickup orders (no payment)
+  const createPickupOrderMutation = useMutation({
+    mutationFn: async (orderData: any) => {
+      const res = await apiRequest("POST", "/api/orders", orderData);
+      return res.json();
+    },
+    onSuccess: handleOrderSuccess,
+    onError: (error: Error) => {
+      toast({
+        title: "Order Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handlePlacePickupOrder = () => {
+    const validation = validateCheckout();
+    if (!validation.valid) {
+      toast({
+        title: "Checkout Error",
+        description: validation.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    createPickupOrderMutation.mutate(getOrderData());
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -406,15 +466,18 @@ export default function Checkout() {
               </CardContent>
             </Card>
 
-            {/* Payment Method */}
+            {/* Payment Method or Place Order */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <CreditCard className="w-5 h-5" />
-                  <span>Payment Information</span>
+                  <span>{isPickup ? "Confirm Order" : "Payment Information"}</span>
                 </CardTitle>
                 <CardDescription>
-                  Enter your payment details to complete the order
+                  {isPickup 
+                    ? "Review and place your pickup order" 
+                    : "Enter your payment details to complete the order"
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -430,7 +493,24 @@ export default function Checkout() {
                       ⚠️ {checkoutValidation.message}
                     </p>
                   </div>
-                ) : (
+                ) : isPickup ? (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        Your order will be ready for pickup at the restaurant. Please pay ${total.toFixed(2)} when you collect your order.
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={handlePlacePickupOrder} 
+                      disabled={createPickupOrderMutation.isPending}
+                      className="w-full" 
+                      size="lg"
+                      data-testid="button-place-pickup-order"
+                    >
+                      {createPickupOrderMutation.isPending ? "Placing Order..." : "Place Order"}
+                    </Button>
+                  </div>
+                ) : clientSecret ? (
                   <Elements stripe={stripePromise} options={{ clientSecret }}>
                     <PaymentForm 
                       onOrderSuccess={handleOrderSuccess}
@@ -438,6 +518,12 @@ export default function Checkout() {
                       total={total}
                     />
                   </Elements>
+                ) : (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Setting up payment...
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -488,6 +574,24 @@ export default function Checkout() {
               </CardContent>
             </Card>
 
+            {/* Pickup Option */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="flex flex-col">
+                    <Label htmlFor="pickup-toggle" className="cursor-pointer font-medium">Pickup Order</Label>
+                    <span className="text-xs text-muted-foreground">Pick up at restaurant & pay on site</span>
+                  </div>
+                  <Switch
+                    id="pickup-toggle"
+                    checked={isPickup}
+                    onCheckedChange={setIsPickup}
+                    data-testid="switch-pickup"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Order Total */}
             <Card>
               <CardContent className="pt-6">
@@ -496,13 +600,19 @@ export default function Checkout() {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-medium" data-testid="checkout-subtotal">${subtotal.toFixed(2)}</span>
                   </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Discount {restaurant?.discountType === "percentage" ? `(${restaurant.discountValue}%)` : ""}</span>
+                      <span data-testid="checkout-discount">-${discount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Delivery Fee</span>
-                    <span className="font-medium" data-testid="checkout-delivery-fee">${deliveryFee.toFixed(2)}</span>
+                    <span className="font-medium" data-testid="checkout-delivery-fee">${finalDeliveryFee.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Service Fee</span>
-                    <span className="font-medium" data-testid="checkout-service-fee">${serviceFee.toFixed(2)}</span>
+                    <span className="font-medium" data-testid="checkout-service-fee">${finalServiceFee.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Tax</span>
@@ -513,6 +623,11 @@ export default function Checkout() {
                     <span>Total</span>
                     <span className="text-primary" data-testid="checkout-total">${total.toFixed(2)}</span>
                   </div>
+                  {isPickup && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Pay ${total.toFixed(2)} at the restaurant when you pick up your order.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
