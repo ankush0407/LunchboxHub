@@ -250,15 +250,39 @@ export default function Checkout() {
   // Calculate service fee, discount, and totals
   const serviceFee = parseFloat(serviceFeeData?.value || "2.00");
   
-  // Calculate discount
+  // Calculate discount - prioritize lunchbox-level discounts over restaurant-level
   let discount = 0;
-  if (restaurant?.discountType && restaurant?.discountValue) {
+  let discountSource = "";
+  
+  // Check if all items have lunchbox-level discounts
+  const hasLunchboxDiscounts = items.some(item => 
+    item.lunchbox.discountType && item.lunchbox.discountValue
+  );
+  
+  if (hasLunchboxDiscounts) {
+    // Calculate discount for each item based on its lunchbox discount
+    items.forEach(item => {
+      if (item.lunchbox.discountType && item.lunchbox.discountValue) {
+        const itemPrice = parseFloat(item.lunchbox.price) * item.quantity;
+        const discountVal = parseFloat(item.lunchbox.discountValue);
+        
+        if (item.lunchbox.discountType === "percentage") {
+          discount += (itemPrice * discountVal) / 100;
+        } else if (item.lunchbox.discountType === "flat") {
+          discount += discountVal * item.quantity;
+        }
+      }
+    });
+    discountSource = "lunchbox";
+  } else if (restaurant?.discountType && restaurant?.discountValue) {
+    // Fall back to restaurant-level discount if no lunchbox discounts
     const discountVal = parseFloat(restaurant.discountValue);
     if (restaurant.discountType === "percentage") {
       discount = (subtotal * discountVal) / 100;
     } else if (restaurant.discountType === "flat") {
       discount = discountVal;
     }
+    discountSource = "restaurant";
   }
 
   // Calculate final amounts
@@ -602,7 +626,11 @@ export default function Checkout() {
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
-                      <span>Discount {restaurant?.discountType === "percentage" ? `(${restaurant.discountValue}%)` : ""}</span>
+                      <span>
+                        Discount
+                        {discountSource === "lunchbox" && " (Item-specific)"}
+                        {discountSource === "restaurant" && restaurant?.discountType === "percentage" && ` (${restaurant.discountValue}%)`}
+                      </span>
                       <span data-testid="checkout-discount">-${discount.toFixed(2)}</span>
                     </div>
                   )}
