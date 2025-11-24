@@ -58,6 +58,8 @@ export const lunchboxes = pgTable("lunchboxes", {
     saturday?: string;
     sunday?: string;
   }>(),
+  discountType: text("discount_type"),
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }),
   restaurantId: varchar("restaurant_id").references(() => restaurants.id),
   deliveryBuildingIds: varchar("delivery_building_ids").array(),
   createdAt: timestamp("created_at").defaultNow(),

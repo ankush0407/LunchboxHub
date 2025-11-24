@@ -35,6 +35,8 @@ const lunchboxFormSchema = insertLunchboxSchema.omit({ restaurantId: true }).ext
     saturday: z.string().optional(),
     sunday: z.string().optional(),
   }).optional(),
+  discountType: z.string().optional(),
+  discountValue: z.string().optional(),
 });
 
 const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -50,7 +52,7 @@ export default function RestaurantDashboard() {
   const [editingLunchbox, setEditingLunchbox] = useState<Lunchbox | null>(null);
   const [lunchboxImageUrl, setLunchboxImageUrl] = useState("");
   const [isEditingDiscount, setIsEditingDiscount] = useState(false);
-  const [discountType, setDiscountType] = useState<"percentage" | "flat" | "">("");
+  const [discountType, setDiscountType] = useState<"percentage" | "flat" | null>(null);
   const [discountValue, setDiscountValue] = useState("");
 
   // Redirect non-restaurant owners
@@ -104,6 +106,8 @@ export default function RestaurantDashboard() {
         saturday: "",
         sunday: "",
       },
+      discountType: "",
+      discountValue: "",
     },
   });
 
@@ -227,7 +231,7 @@ export default function RestaurantDashboard() {
 
   useEffect(() => {
     if (restaurant) {
-      setDiscountType((restaurant.discountType as "percentage" | "flat" | "") || "");
+      setDiscountType((restaurant.discountType as "percentage" | "flat") || null);
       setDiscountValue(restaurant.discountValue || "");
     }
   }, [restaurant]);
@@ -262,6 +266,8 @@ export default function RestaurantDashboard() {
         saturday: "",
         sunday: "",
       },
+      discountType: lunchbox.discountType || "",
+      discountValue: lunchbox.discountValue || "",
     } as any);
     setIsEditDialogOpen(true);
   };
@@ -657,6 +663,64 @@ export default function RestaurantDashboard() {
                               />
                             ))}
                           </div>
+                          
+                          <div className="space-y-3 border-t pt-4">
+                            <FormLabel className="text-base font-semibold">Discount Settings (Optional)</FormLabel>
+                            <p className="text-sm text-muted-foreground">Apply a discount specific to this lunchbox</p>
+                            
+                            <FormField
+                              control={form.control}
+                              name="discountType"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Discount Type</FormLabel>
+                                  <Select 
+                                    value={field.value || "none"} 
+                                    onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger data-testid="select-lunchbox-discount-type">
+                                        <SelectValue placeholder="Select discount type" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="none">No Discount</SelectItem>
+                                      <SelectItem value="percentage">Percentage Off</SelectItem>
+                                      <SelectItem value="flat">Flat Amount Off</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            {form.watch("discountType") && form.watch("discountType") !== "none" && (
+                              <FormField
+                                control={form.control}
+                                name="discountValue"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Discount Value</FormLabel>
+                                    <div className="flex items-center space-x-2">
+                                      {form.watch("discountType") === "flat" && <span className="text-muted-foreground">$</span>}
+                                      <FormControl>
+                                        <Input 
+                                          type="number" 
+                                          step="0.01" 
+                                          placeholder={form.watch("discountType") === "percentage" ? "e.g., 10" : "e.g., 2.50"}
+                                          {...field}
+                                          data-testid="input-lunchbox-discount-value"
+                                        />
+                                      </FormControl>
+                                      {form.watch("discountType") === "percentage" && <span className="text-muted-foreground">%</span>}
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+                          </div>
+                          
                           <FormField
                             control={form.control}
                             name="deliveryBuildingIds"
@@ -839,15 +903,15 @@ export default function RestaurantDashboard() {
                     </p>
                     <div className="space-y-3">
                       <Select
-                        value={discountType}
-                        onValueChange={(value) => setDiscountType(value as "percentage" | "flat" | "")}
+                        value={discountType || "none"}
+                        onValueChange={(value) => setDiscountType(value === "none" ? null : value as "percentage" | "flat")}
                         disabled={!isEditingDiscount}
                       >
                         <SelectTrigger className="w-full" data-testid="select-discount-type">
                           <SelectValue placeholder="Select discount type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No Discount</SelectItem>
+                          <SelectItem value="none">No Discount</SelectItem>
                           <SelectItem value="percentage">Percentage Off</SelectItem>
                           <SelectItem value="flat">Flat Amount Off</SelectItem>
                         </SelectContent>
@@ -883,7 +947,7 @@ export default function RestaurantDashboard() {
                           <Button
                             onClick={() => {
                               setIsEditingDiscount(false);
-                              setDiscountType((restaurant?.discountType as "percentage" | "flat" | "") || "");
+                              setDiscountType((restaurant?.discountType as "percentage" | "flat") || null);
                               setDiscountValue(restaurant?.discountValue || "");
                             }}
                             variant="outline"
@@ -1092,6 +1156,64 @@ export default function RestaurantDashboard() {
                     />
                   ))}
                 </div>
+                
+                <div className="space-y-3 border-t pt-4">
+                  <FormLabel className="text-base font-semibold">Discount Settings (Optional)</FormLabel>
+                  <p className="text-sm text-muted-foreground">Apply a discount specific to this lunchbox</p>
+                  
+                  <FormField
+                    control={form.control}
+                    name="discountType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Discount Type</FormLabel>
+                        <Select 
+                          value={field.value || "none"} 
+                          onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-edit-lunchbox-discount-type">
+                              <SelectValue placeholder="Select discount type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">No Discount</SelectItem>
+                            <SelectItem value="percentage">Percentage Off</SelectItem>
+                            <SelectItem value="flat">Flat Amount Off</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {form.watch("discountType") && form.watch("discountType") !== "none" && (
+                    <FormField
+                      control={form.control}
+                      name="discountValue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Discount Value</FormLabel>
+                          <div className="flex items-center space-x-2">
+                            {form.watch("discountType") === "flat" && <span className="text-muted-foreground">$</span>}
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                step="0.01" 
+                                placeholder={form.watch("discountType") === "percentage" ? "e.g., 10" : "e.g., 2.50"}
+                                {...field}
+                                data-testid="input-edit-lunchbox-discount-value"
+                              />
+                            </FormControl>
+                            {form.watch("discountType") === "percentage" && <span className="text-muted-foreground">%</span>}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+                
                 <FormField
                   control={form.control}
                   name="deliveryBuildingIds"
