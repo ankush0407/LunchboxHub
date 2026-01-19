@@ -1,0 +1,83 @@
+error: unknown option `force~'
+usage: git push [<options>] [<repository> [<refspec>...]]
+
+    -v, --[no-]verbose    be more verbose
+    -q, --[no-]quiet      be more quiet
+    --[no-]repo <repository>
+                          repository
+    --[no-]all            push all branches
+    --[no-]branches       alias of --all
+    --[no-]mirror         mirror all refs
+    -d, --[no-]delete     delete refs
+    --[no-]tags           push tags (can't be used with --all or --branches or --mirror)
+    -n, --[no-]dry-run    dry run
+    --[no-]porcelain      machine-readable output
+    -f, --[no-]force      force updates
+    --[no-]force-with-lease[=<refname>:<expect>]
+                          require old value of ref to be at this value
+    --[no-]force-if-includes
+                          require remote updates to be integrated locally
+    --[no-]recurse-submodules (check|on-demand|no)
+                          control recursive pushing of submodules
+    --[no-]thin           use thin pack
+    --[no-]receive-pack <receive-pack>
+                          receive pack program
+    --[no-]exec <receive-pack>
+                          receive pack program
+    -u, --[no-]set-upstream
+                          set upstream for git pull/status
+    --[no-]progress       force progress reporting
+    --[no-]prune          prune locally removed refs
+    --no-verify           bypass pre-push hook
+    --verify              opposite of --no-verify
+    --[no-]follow-tags    push missing but relevant tags
+    --[no-]signed[=(yes|no|if-asked)]
+                          GPG sign the push
+    --[no-]atomic         request atomic transaction on remote side
+    -o, --[no-]push-option <server-specific>
+                          option to transmit
+    -4, --ipv4            use IPv4 addresses only
+    -6, --ipv6            use IPv6 addresses only
+
+~/workspace$ git push -u origin main --force
+Enumerating objects: 1022, done.
+Counting objects: 100% (1022/1022), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (1003/1003), done.
+Writing objects: 100% (1022/1022), 4.10 MiB | 6.82 MiB/s, done.
+Total 1022 (delta 683), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (683/683), done.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:     
+remote:       —— Stripe Test API Secret Key ————————————————————————
+remote:        locations:
+remote:          - commit: efaf879490bbdf8cbfac44453c706e149115e4eb
+remote:            path: .replit:49
+remote:          - commit: 099e9b4ce11aceac8dc24a69521bd20a7e5f26fc
+remote:            path: .replit:77
+remote:          - commit: df26532211c688b765cabbce51f8925c09cd2c76
+remote:            path: .replit:81
+remote:          - commit: 7899e665886007568de72c5df3379cd4e4b389c3
+remote:            path: .replit:85
+remote:          - commit: e2c9334b93927c039faabb59c765c4d48aa6f229
+remote:            path: .replit:85
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/ankush0407/LunchboxHub/security/secret-scanning/unblock-secret/38SRkXCJbrQssZWaha31CieNIum
+remote:     
+remote: 
+remote: 
+To https://github.com/ankush0407/LunchboxHub
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/ankush0407/LunchboxHub'
