@@ -35,6 +35,7 @@ interface EnhancedOrder {
     address: string;
   };
   deliveryDay?: string;
+  isPickup?: boolean;
   createdAt: string;
   customer?: {
     id: string;
@@ -82,6 +83,7 @@ export default function RestaurantOrders() {
   const [deliveryBuildingFilter, setDeliveryBuildingFilter] = useState<string>("all");
   const [deliveryDayFilter, setDeliveryDayFilter] = useState<string>("all");
   const [menuItemFilter, setMenuItemFilter] = useState<string>("all");
+  const [orderTypeFilter, setOrderTypeFilter] = useState<string>("all");
   const [dateFromFilter, setDateFromFilter] = useState<string>("");
   const [dateToFilter, setDateToFilter] = useState<string>("");
 
@@ -164,6 +166,14 @@ export default function RestaurantOrders() {
         return false;
       }
 
+      // Order type filter
+      if (orderTypeFilter !== "all") {
+        const isPickup = orderTypeFilter === "pickup";
+        if (order.isPickup !== isPickup) {
+          return false;
+        }
+      }
+
       // Date range filter
       if (dateFromFilter || dateToFilter) {
         const orderDate = parseISO(order.createdAt);
@@ -173,7 +183,7 @@ export default function RestaurantOrders() {
 
       return true;
     });
-  }, [flattenedOrders, searchQuery, statusFilter, deliveryLocationFilter, deliveryBuildingFilter, deliveryDayFilter, menuItemFilter, dateFromFilter, dateToFilter]);
+  }, [flattenedOrders, searchQuery, statusFilter, deliveryLocationFilter, deliveryBuildingFilter, deliveryDayFilter, menuItemFilter, orderTypeFilter, dateFromFilter, dateToFilter]);
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
@@ -429,6 +439,21 @@ export default function RestaurantOrders() {
                   </Select>
                 </div>
 
+                {/* Order Type Filter */}
+                <div>
+                  <Label htmlFor="order-type-filter">Order Type</Label>
+                  <Select value={orderTypeFilter} onValueChange={setOrderTypeFilter} data-testid="select-order-type-filter">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="pickup">Pickup</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Delivery Day Filter */}
                 <div>
                   <Label htmlFor="day-filter">Delivery Day</Label>
@@ -520,6 +545,7 @@ export default function RestaurantOrders() {
                           <TableHead>Location</TableHead>
                           <TableHead>Building</TableHead>
                           <TableHead>Delivery Day</TableHead>
+                          <TableHead>Order Type</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Order Date</TableHead>
                           <TableHead>Actions</TableHead>
@@ -562,6 +588,11 @@ export default function RestaurantOrders() {
                             <TableCell>{order.deliveryBuilding?.name || "N/A"}</TableCell>
                             <TableCell className="capitalize">
                               {order.deliveryDay || "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+                                {order.isPickup ? "Pickup" : "Online"}
+                              </Badge>
                             </TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(order.status)}>

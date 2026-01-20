@@ -432,63 +432,65 @@ export default function Checkout() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Order Details */}
           <div className="space-y-6">
-            {/* Delivery Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MapPin className="w-5 h-5" />
-                  <span>Delivery Information</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Delivery Location</Label>
-                    <div className="mt-2 p-3 bg-muted rounded-lg">
-                      <span className="font-medium text-foreground">{selectedLocation}</span>
+            {/* Delivery Information - Only show for delivery orders */}
+            {!isPickup && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <MapPin className="w-5 h-5" />
+                    <span>Delivery Information</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Delivery Location</Label>
+                      <div className="mt-2 p-3 bg-muted rounded-lg">
+                        <span className="font-medium text-foreground">{selectedLocation}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="delivery-building">Delivery Building</Label>
+                      <Select value={selectedDeliveryBuilding} onValueChange={setSelectedDeliveryBuilding}>
+                        <SelectTrigger className="mt-2" data-testid="select-delivery-building">
+                          <Building2 className="w-4 h-4 mr-2" />
+                          <SelectValue placeholder="Select delivery building" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {deliveryBuildings?.map(building => (
+                            <SelectItem key={building.id} value={building.id}>
+                              {building.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="delivery-day">Delivery Day</Label>
+                      <Select value={selectedDeliveryDay} onValueChange={setSelectedDeliveryDay}>
+                        <SelectTrigger className="mt-2" data-testid="select-delivery-day">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          <SelectValue placeholder="Select delivery day" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableDeliveryDays.map(day => (
+                            <SelectItem key={day} value={day}>
+                              {day.charAt(0).toUpperCase() + day.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-800">Estimated Delivery - Before 12:30PM at Building Reception</span>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <Label htmlFor="delivery-building">Delivery Building</Label>
-                    <Select value={selectedDeliveryBuilding} onValueChange={setSelectedDeliveryBuilding}>
-                      <SelectTrigger className="mt-2" data-testid="select-delivery-building">
-                        <Building2 className="w-4 h-4 mr-2" />
-                        <SelectValue placeholder="Select delivery building" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {deliveryBuildings?.map(building => (
-                          <SelectItem key={building.id} value={building.id}>
-                            {building.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="delivery-day">Delivery Day</Label>
-                    <Select value={selectedDeliveryDay} onValueChange={setSelectedDeliveryDay}>
-                      <SelectTrigger className="mt-2" data-testid="select-delivery-day">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <SelectValue placeholder="Select delivery day" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableDeliveryDays.map(day => (
-                          <SelectItem key={day} value={day}>
-                            {day.charAt(0).toUpperCase() + day.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">Estimated Delivery - Before 12:30PM at Building Reception</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Payment Method or Place Order */}
             <Card>
@@ -520,6 +522,10 @@ export default function Checkout() {
                 ) : isPickup ? (
                   <div className="space-y-4">
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Clock className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-800">Pickup Window: 2:00-2:30PM</span>
+                      </div>
                       <p className="text-sm text-blue-800">
                         Your order will be ready for pickup at the restaurant. Please pay ${total.toFixed(2)} when you collect your order.
                       </p>

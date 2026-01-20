@@ -85,13 +85,21 @@ export default function Orders() {
                         <Receipt className="w-5 h-5" />
                         <span>Order #{(order as any).orderNumber || order.id.slice(0, 8)}</span>
                       </CardTitle>
-                      <Badge 
-                        className={`flex items-center space-x-1 ${getStatusColor(order.status)}`}
-                        data-testid={`order-status-${order.id}`}
-                      >
-                        {getStatusIcon(order.status)}
-                        <span className="capitalize">{order.status}</span>
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant="outline"
+                          className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800"
+                        >
+                          {(order as any).isPickup ? "Pickup" : "Online"}
+                        </Badge>
+                        <Badge 
+                          className={`flex items-center space-x-1 ${getStatusColor(order.status)}`}
+                          data-testid={`order-status-${order.id}`}
+                        >
+                          {getStatusIcon(order.status)}
+                          <span className="capitalize">{order.status}</span>
+                        </Badge>
+                      </div>
                     </div>
                     <CardDescription>
                       Placed on {format(new Date(order.createdAt || Date.now()), "PPP 'at' p")}
@@ -112,6 +120,12 @@ export default function Orders() {
                           <h4 className="font-medium text-foreground mb-1">Total Amount</h4>
                           <p className="text-lg font-semibold text-foreground" data-testid={`order-total-${order.id}`}>
                             ${parseFloat(order.total).toFixed(2)}
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-foreground mb-1">Order Type</h4>
+                          <p className="text-muted-foreground">
+                            {(order as any).isPickup ? "Pickup" : "Online"}
                           </p>
                         </div>
                       </div>

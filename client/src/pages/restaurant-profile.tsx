@@ -50,6 +50,8 @@ export default function RestaurantProfile() {
       return await res.json();
     },
     enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch delivery locations
@@ -59,6 +61,8 @@ export default function RestaurantProfile() {
       const res = await apiRequest("GET", "/api/delivery-locations");
       return await res.json();
     },
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const form = useForm<RestaurantProfileFormData>({
