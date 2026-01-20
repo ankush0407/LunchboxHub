@@ -1,5 +1,7 @@
 import { useCart } from "@/hooks/use-cart";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +15,17 @@ interface ShoppingCartProps {
 export default function ShoppingCart({ selectedLocation }: ShoppingCartProps) {
   const [, setLocation] = useLocation();
   const { items, updateQuantity, removeItem, subtotal, itemCount, deliveryFee } = useCart();
-  const serviceFee = 1.50;
+  
+  // Fetch service fee from backend
+  const { data: serviceFeeData } = useQuery<{ value: string }>({
+    queryKey: ["/api/settings/service-fee"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/settings/service-fee");
+      return res.json();
+    },
+  });
+  
+  const serviceFee = parseFloat(serviceFeeData?.value || "2.00");
   const taxRate = 0.10;
   const tax = subtotal * taxRate;
   const total = subtotal + deliveryFee + serviceFee + tax;

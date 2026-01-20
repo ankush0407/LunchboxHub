@@ -23,6 +23,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { z } from "zod";
 
 const lunchboxFormSchema = insertLunchboxSchema.omit({ restaurantId: true }).extend({
+  price: z.string().min(1, "Price is required").refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Price must be a positive number"
+  }),
   deliveryBuildingIds: z.array(z.string()).optional(),
   dietaryTags: z.array(z.string()).optional(),
   availableDays: z.array(z.string()).optional(),
@@ -64,16 +67,22 @@ export default function RestaurantDashboard() {
   const { data: restaurant } = useQuery<Restaurant>({
     queryKey: ["/api/restaurants", "owner", user?.id],
     enabled: !!user,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: lunchboxes, isLoading: lunchboxesLoading } = useQuery<Lunchbox[]>({
     queryKey: ["/api/restaurants", restaurant?.id, "lunchboxes"],
     enabled: !!restaurant,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: orders, isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
     enabled: !!restaurant,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: deliveryBuildings } = useQuery<DeliveryBuilding[]>({
@@ -84,6 +93,8 @@ export default function RestaurantDashboard() {
       return res.json();
     },
     enabled: !!restaurant?.deliveryLocationId,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const form = useForm({
@@ -237,10 +248,17 @@ export default function RestaurantDashboard() {
   }, [restaurant]);
 
   const onSubmit = async (data: any) => {
+    // Convert empty strings to undefined/null for numeric fields
+    const formattedData = {
+      ...data,
+      price: data.price === "" ? undefined : data.price,
+      discountValue: data.discountValue === "" ? null : data.discountValue,
+    };
+    
     if (editingLunchbox) {
-      updateLunchboxMutation.mutate(data);
+      updateLunchboxMutation.mutate(formattedData);
     } else {
-      addLunchboxMutation.mutate(data);
+      addLunchboxMutation.mutate(formattedData);
     }
   };
 

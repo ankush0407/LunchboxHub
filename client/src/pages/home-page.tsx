@@ -101,7 +101,10 @@ export default function HomePage() {
       const buildingMatch = selectedDeliveryBuilding === "all" || (() => {
         const restaurantLunchboxes = allLunchboxes?.[restaurant.id] || [];
         return restaurantLunchboxes.some(lunchbox => 
-          lunchbox.deliveryBuildingIds?.includes(selectedDeliveryBuilding)
+          // Only match if the lunchbox explicitly has delivery buildings set AND includes the selected building
+          lunchbox.deliveryBuildingIds && 
+          lunchbox.deliveryBuildingIds.length > 0 && 
+          lunchbox.deliveryBuildingIds.includes(selectedDeliveryBuilding)
         );
       })();
       
@@ -135,9 +138,19 @@ export default function HomePage() {
     });
   })();
 
-  const filteredLunchboxes = lunchboxes?.filter(lunchbox => 
-    selectedDeliveryDay === "all" || lunchbox.availableDays?.includes(selectedDeliveryDay)
-  ) || [];
+  const filteredLunchboxes = lunchboxes?.filter(lunchbox => {
+    // Filter by day
+    const dayMatch = selectedDeliveryDay === "all" || lunchbox.availableDays?.includes(selectedDeliveryDay);
+    
+    // Filter by delivery building
+    const buildingMatch = selectedDeliveryBuilding === "all" || (
+      lunchbox.deliveryBuildingIds && 
+      lunchbox.deliveryBuildingIds.length > 0 && 
+      lunchbox.deliveryBuildingIds.includes(selectedDeliveryBuilding)
+    );
+    
+    return dayMatch && buildingMatch;
+  }) || [];
 
   return (
     <div className="min-h-screen bg-background">
