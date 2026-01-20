@@ -37,6 +37,7 @@ export const restaurants = pgTable("restaurants", {
   ownerId: varchar("owner_id").references(() => users.id),
   discountType: text("discount_type"),
   discountValue: decimal("discount_value", { precision: 10, scale: 2 }),
+  orderTypes: text("order_types").default("both"), // "both", "pickup_only", "online_only"
   createdAt: timestamp("created_at").defaultNow(),
 });
 

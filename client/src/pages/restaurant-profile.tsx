@@ -27,6 +27,7 @@ const restaurantProfileSchema = z.object({
   imageUrl: z.string().optional().or(z.literal("")),
   deliveryFee: z.string().min(1, "Delivery fee is required"),
   deliveryLocationId: z.string().min(1, "Delivery location is required"),
+  orderTypes: z.string().default("both"),
   // Owner information fields
   ownerFullName: z.string().min(1, "Full name is required"),
   ownerPhoneNumber: z.string().optional(),
@@ -74,6 +75,7 @@ export default function RestaurantProfile() {
       imageUrl: "",
       deliveryFee: "",
       deliveryLocationId: "",
+      orderTypes: "both",
       ownerFullName: "",
       ownerPhoneNumber: "",
     },
@@ -90,6 +92,7 @@ export default function RestaurantProfile() {
         imageUrl: restaurant.imageUrl || "",
         deliveryFee: restaurant.deliveryFee || "",
         deliveryLocationId: restaurant.deliveryLocationId || "",
+        orderTypes: (restaurant as any).orderTypes || "both",
         ownerFullName: user?.fullName || "",
         ownerPhoneNumber: user?.phoneNumber || "",
       });
@@ -135,6 +138,7 @@ export default function RestaurantProfile() {
         imageUrl: data.imageUrl,
         deliveryFee: data.deliveryFee,
         deliveryLocationId: data.deliveryLocationId,
+        orderTypes: data.orderTypes,
         ownerId: user?.id,
       };
 
@@ -319,6 +323,32 @@ export default function RestaurantProfile() {
                             ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="orderTypes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Accepted Order Types</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-order-types">
+                              <SelectValue placeholder="Select order types" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="both">Both (Online & Pickup)</SelectItem>
+                            <SelectItem value="online_only">Online Delivery Only</SelectItem>
+                            <SelectItem value="pickup_only">Pickup Only</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Choose which order types your restaurant accepts
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}

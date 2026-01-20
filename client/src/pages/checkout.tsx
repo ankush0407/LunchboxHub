@@ -247,6 +247,20 @@ export default function Checkout() {
     }
   }, [selectedDeliveryDay, availableDeliveryDays]);
 
+  // Determine order type based on restaurant settings
+  const restaurantOrderTypes = (restaurant as any)?.orderTypes || "both";
+  const isPickupOnly = restaurantOrderTypes === "pickup_only";
+  const isOnlineOnly = restaurantOrderTypes === "online_only";
+
+  // Force pickup mode if restaurant is pickup-only
+  useEffect(() => {
+    if (isPickupOnly && !isPickup) {
+      setIsPickup(true);
+    } else if (isOnlineOnly && isPickup) {
+      setIsPickup(false);
+    }
+  }, [isPickupOnly, isOnlineOnly]);
+
   // Calculate service fee, discount, and totals
   const serviceFee = parseFloat(serviceFeeData?.value || "2.00");
   
@@ -432,65 +446,65 @@ export default function Checkout() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Order Details */}
           <div className="space-y-6">
-            {/* Delivery Information - Only show for delivery orders */}
-            {!isPickup && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <MapPin className="w-5 h-5" />
-                    <span>Delivery Information</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Delivery Location</Label>
-                      <div className="mt-2 p-3 bg-muted rounded-lg">
-                        <span className="font-medium text-foreground">{selectedLocation}</span>
-                      </div>
+            {/* Delivery/Pickup Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <MapPin className="w-5 h-5" />
+                  <span>{isPickup ? "Pickup" : "Delivery"} Information</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label>{isPickup ? "Pickup" : "Delivery"} Location</Label>
+                    <div className="mt-2 p-3 bg-muted rounded-lg">
+                      <span className="font-medium text-foreground">{selectedLocation}</span>
                     </div>
-                    <div>
-                      <Label htmlFor="delivery-building">Delivery Building</Label>
-                      <Select value={selectedDeliveryBuilding} onValueChange={setSelectedDeliveryBuilding}>
-                        <SelectTrigger className="mt-2" data-testid="select-delivery-building">
-                          <Building2 className="w-4 h-4 mr-2" />
-                          <SelectValue placeholder="Select delivery building" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {deliveryBuildings?.map(building => (
-                            <SelectItem key={building.id} value={building.id}>
-                              {building.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="delivery-day">Delivery Day</Label>
-                      <Select value={selectedDeliveryDay} onValueChange={setSelectedDeliveryDay}>
-                        <SelectTrigger className="mt-2" data-testid="select-delivery-day">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          <SelectValue placeholder="Select delivery day" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableDeliveryDays.map(day => (
-                            <SelectItem key={day} value={day}>
-                              {day.charAt(0).toUpperCase() + day.slice(1)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="delivery-building">{isPickup ? "Pickup" : "Delivery"} Building</Label>
+                    <Select value={selectedDeliveryBuilding} onValueChange={setSelectedDeliveryBuilding}>
+                      <SelectTrigger className="mt-2" data-testid="select-delivery-building">
+                        <Building2 className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder={`Select ${isPickup ? "pickup" : "delivery"} building`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deliveryBuildings?.map(building => (
+                          <SelectItem key={building.id} value={building.id}>
+                            {building.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="delivery-day">{isPickup ? "Pickup" : "Delivery"} Day</Label>
+                    <Select value={selectedDeliveryDay} onValueChange={setSelectedDeliveryDay}>
+                      <SelectTrigger className="mt-2" data-testid="select-delivery-day">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder={`Select ${isPickup ? "pickup" : "delivery"} day`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableDeliveryDays.map(day => (
+                          <SelectItem key={day} value={day}>
+                            {day.charAt(0).toUpperCase() + day.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {!isPickup && (
                     <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <div className="flex items-center space-x-2">
                         <Clock className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-blue-800">Estimated Delivery - Before 12:30PM at Building Reception</span>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Payment Method or Place Order */}
             <Card>
@@ -604,23 +618,46 @@ export default function Checkout() {
               </CardContent>
             </Card>
 
-            {/* Pickup Option */}
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="flex flex-col">
-                    <Label htmlFor="pickup-toggle" className="cursor-pointer font-medium">Pickup Order</Label>
-                    <span className="text-xs text-muted-foreground">Pick up at restaurant & pay on site</span>
+            {/* Pickup Option - Only show if restaurant accepts both types */}
+            {restaurantOrderTypes === "both" && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div className="flex flex-col">
+                      <Label htmlFor="pickup-toggle" className="cursor-pointer font-medium">Pickup Order</Label>
+                      <span className="text-xs text-muted-foreground">Pick up at restaurant & pay on site</span>
+                    </div>
+                    <Switch
+                      id="pickup-toggle"
+                      checked={isPickup}
+                      onCheckedChange={setIsPickup}
+                      data-testid="switch-pickup"
+                    />
                   </div>
-                  <Switch
-                    id="pickup-toggle"
-                    checked={isPickup}
-                    onCheckedChange={setIsPickup}
-                    data-testid="switch-pickup"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show info message if restaurant has restricted order types */}
+            {isPickupOnly && (
+              <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
+                    <span className="text-sm font-medium">ℹ️ This restaurant accepts pickup orders only</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {isOnlineOnly && (
+              <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
+                    <span className="text-sm font-medium">ℹ️ This restaurant accepts online delivery orders only</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Order Total */}
             <Card>

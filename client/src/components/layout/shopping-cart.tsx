@@ -24,11 +24,28 @@ export default function ShoppingCart({ selectedLocation }: ShoppingCartProps) {
       return res.json();
     },
   });
+
+  // Get restaurant info to check order types
+  const firstRestaurantId = items[0]?.lunchbox?.restaurantId;
+  const { data: restaurant } = useQuery({
+    queryKey: ["/api/restaurants", firstRestaurantId],
+    queryFn: async () => {
+      if (!firstRestaurantId) return null;
+      const res = await apiRequest("GET", `/api/restaurants/${firstRestaurantId}`);
+      return res.json();
+    },
+    enabled: !!firstRestaurantId,
+  });
+
+  const restaurantOrderTypes = (restaurant as any)?.orderTypes || "both";
+  const isPickupOnly = restaurantOrderTypes === "pickup_only";
   
-  const serviceFee = parseFloat(serviceFeeData?.value || "2.00");
+  // Set fees to $0 if restaurant is pickup-only
+  const finalDeliveryFee = isPickupOnly ? 0 : deliveryFee;
+  const serviceFee = isPickupOnly ? 0 : parseFloat(serviceFeeData?.value || "2.00");
   const taxRate = 0.10;
   const tax = subtotal * taxRate;
-  const total = subtotal + deliveryFee + serviceFee + tax;
+  const total = subtotal + finalDeliveryFee + serviceFee + tax;
 
   const handleCheckout = () => {
     if (items.length > 0) {
@@ -145,7 +162,7 @@ export default function ShoppingCart({ selectedLocation }: ShoppingCartProps) {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Delivery Fee</span>
-                <span className="font-medium" data-testid="cart-delivery-fee">${deliveryFee.toFixed(2)}</span>
+                <span className="font-medium" data-testid="cart-delivery-fee">${finalDeliveryFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Service Fee</span>
